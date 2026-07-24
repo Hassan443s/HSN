@@ -13,7 +13,6 @@ export class Scene{
   if(camera) this.activeCamera=camera;
   obj.scene = this;
   this.objects.push(obj);
-  obj.start();
  }
  
  remove(obj: GameObject): void {
@@ -31,6 +30,9 @@ export class Scene{
  }
  
  start() : void{
+  for(const objs of this.objects){
+   objs.start();
+  }
  }
  
  update(delta: number) : void{

@@ -1,5 +1,6 @@
 import { Scene } from "./Scene";
 import { Touch } from "./Touch";
+import { EntryPoint} from "./EntryPoint";
 
 export class Engine {
 
@@ -81,6 +82,7 @@ export class Engine {
   this.rafId = 
    requestAnimationFrame(this.loop);
   Touch.init(this.canvas);
+  EntryPoint.main(this);
 
  }
 

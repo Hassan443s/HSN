@@ -2,16 +2,17 @@ import type { Scene } from "./Scene";
 import {Component} from "./Component";  
 import {Transform} from "../components/Transform";
 
-let direction = 1;
-let speed = 200;
 export class GameObject {
 
  public isDestroyed: boolean = false;
  private components: Component[] = [];
  public readonly transform: Transform;
  public scene?: Scene;
- public onStart? : string;
- public onUpdate? : string;
+ public OnStart? : (self: GameObject) =>
+ void;
+ private _onstart : boolean = false;
+ public OnUpdate? : (self: GameObject,delta: number)
+ => void;
 
  constructor(){
   this.transform = new Transform();
@@ -87,12 +88,14 @@ export class GameObject {
 
 
  start(){
+  
+  if(this._onstart) return;
 
   if(this.isDestroyed) return;
   if(!this.transform) return;
-  if(this.onStart){
-   eval(this.onStart);
-  }
+  this._onstart = true;
+
+  if(this.OnStart) this.OnStart(this);
 
   for(const c of this.components)
    c.start();
@@ -102,8 +105,9 @@ export class GameObject {
  update(delta:number){
 
   if(this.isDestroyed) return;
-  if(this.onUpdate){
-   eval(this.onUpdate);
+  if(this.OnUpdate)
+  {
+   this.OnUpdate(this,delta);
   }
 
   for(const c of this.components)

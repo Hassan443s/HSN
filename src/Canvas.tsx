@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Engine } from "./core/Engine";
-import {Game} from "./Game";
 
 export default function Canvas(){
 
@@ -16,9 +15,6 @@ export default function Canvas(){
   const engine = new Engine(canvas.current);
 
   engineRef.current = engine;
-
-  const game = new Game(engine);
-  game.play();
 
   engine.start();
 
