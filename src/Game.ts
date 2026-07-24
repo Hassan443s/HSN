@@ -34,7 +34,7 @@ export class Game {
 
   //box
    box.addComponent(
-    new BoxRenderer(50, 50, "hotpink")
+    new BoxRenderer(50, 50,"lightgreen",true,"#0a7091",5)
    );
    player.addComponent(new TouchMove(1));
   //player
@@ -91,7 +91,18 @@ cam.transform.y =
     text.onUpdate = `
      this.transform.rot += 1 * delta;
     `;
-  text.onStart = `
+    box.onUpdate =`
+    this.transform.y += speed * delta * direction;
+
+    if(this.transform.y >= 500){
+        direction = -1;
+    }
+
+    if(this.transform.y <= 100){
+        direction = 1;
+    }
+    `;
+  text.onStart = `console.log(this.transform.y);
   `;
   //End
   // add to scene1

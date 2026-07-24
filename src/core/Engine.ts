@@ -5,7 +5,7 @@ export class Engine {
 
  private lastTime = 0;
  private deltaTime = 0;
- 
+
  private loop = this.gameloop.bind(this);
  private resizeHandler = 
   this.resize.bind(this);
@@ -127,7 +127,7 @@ Touch.destroy(this.canvas);
  
 update(): void {
 // Update
-
+ 
  //1..
  if(this.currentScene){
  this.currentScene.update(this.deltaTime);

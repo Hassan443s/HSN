@@ -2,6 +2,8 @@ import type { Scene } from "./Scene";
 import {Component} from "./Component";  
 import {Transform} from "../components/Transform";
 
+let direction = 1;
+let speed = 200;
 export class GameObject {
 
  public isDestroyed: boolean = false;
