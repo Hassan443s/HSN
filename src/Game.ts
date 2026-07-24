@@ -50,7 +50,7 @@ export class Game {
    );
   //camera Test
    cam.addComponent(
-    new Camera(0.5)
+    new Camera(1)
    );
   
   cam.transform.x = 
