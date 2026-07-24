@@ -127,7 +127,7 @@ Touch.destroy(this.canvas);
  
 update(): void {
 // Update
- 
+
  //1..
  if(this.currentScene){
  this.currentScene.update(this.deltaTime);
@@ -135,20 +135,19 @@ update(): void {
 }
 
 render(): void {
- const rect =
-  this.canvas.getBoundingClientRect();
 // Render
  this.ctx.clearRect(
   0,
   0,
-  rect.width,
-  rect.height
+  this.viewWidth,
+  this.viewHeight
  );
  
 //2..
  if(this.currentScene){
   this.currentScene.draw(
-   this.ctx,rect.width,rect.height
+   
+   this.ctx,this.viewWidth,this.viewHeight
   );
  }//render scene
 
