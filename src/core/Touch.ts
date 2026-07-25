@@ -40,6 +40,8 @@ export class Touch {
 
   private static onTouchEnd = (e: TouchEvent) => {
 
+   e.preventDefault();
+
    if(e.touches.length > 0) return;
 
     Touch.pressed = false;

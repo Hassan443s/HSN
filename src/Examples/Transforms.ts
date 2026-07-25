@@ -66,7 +66,7 @@ export class Transforms {
 
   //cods
   box1.transform.y += 120 * -1;
-  scene.OnFrame = (delta) => {
+  scene.OnFrame((delta:number) => {
    if(!c1 || !c2) return;
 
    time += delta;
@@ -88,7 +88,7 @@ export class Transforms {
    icon.transform.scaleX = scale;
    icon.transform.scaleY = scale;
    
-  };
+  });
 
   //end and run the app
   this.engine.addScene(scene);

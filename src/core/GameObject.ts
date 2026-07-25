@@ -1,5 +1,5 @@
 import type { Scene } from "./Scene";
-import {Component} from "./Component";  
+import {Component} from "./Component";
 import {Transform} from "../components/Transform";
 
 export class GameObject {
@@ -8,25 +8,19 @@ export class GameObject {
  private components: Component[] = [];
  public readonly transform: Transform;
  public scene?: Scene;
+ public isUI: boolean = false;
 
  constructor(){
   this.transform = new Transform();
   this.addComponent(this.transform);
  }
 
- /*isTouchingObject(){
-  (Touch.x >= obj.posX &&
-  Touch.x <= obj.posX + obj.width &&
-  Touch.y >= obj.posY &&
-  Touch.y <= obj.posY + obj.height)*/
-
- addComponent<T extends Component>(comp:T): T 
+ addComponent<T extends Component>(comp:T): T
  {
-
   if(this.isDestroyed)
     throw new Error("GameObject destroyed");
 
-  if(comp instanceof Transform && 
+  if(comp instanceof Transform &&
      this.hasComponent(Transform))
     throw new Error("Transform already exists");
 
@@ -36,9 +30,7 @@ export class GameObject {
   return comp;
  }
 
-
  removeComponent(comp:Component):void {
-
   if(this.isDestroyed) return;
   if (comp instanceof Transform) {
    console.log("transform cannot be deleted");
@@ -53,11 +45,9 @@ export class GameObject {
   comp.destroy();
  }
 
-
  getComponent<T extends Component>(
   type:new(...args:any[])=>T
  ):T | undefined {
-
   if(this.isDestroyed) return;
 
   return this.components.find(
@@ -65,11 +55,9 @@ export class GameObject {
   ) as T | undefined;
  }
 
-
  getComponents<T extends Component>(
   type:new(...args:any[])=>T
  ):T[] {
-
   if(this.isDestroyed) return [];
 
   return this.components.filter(
@@ -81,9 +69,7 @@ export class GameObject {
   return this.components.some(c => c instanceof type);
  }
 
-
  start(){
-
   if(this.isDestroyed) return;
   if(!this.transform) return;
 
@@ -91,18 +77,14 @@ export class GameObject {
    c.start();
  }
 
-
  update(delta:number){
-
   if(this.isDestroyed) return;
 
   for(const c of this.components)
    c.update(delta);
-  //code
  }
 
  draw(ctx:CanvasRenderingContext2D){
-
   if(this.isDestroyed) return;
 
   for(const c of this.components)
@@ -110,7 +92,6 @@ export class GameObject {
  }
 
  destroy(){
-
   if(this.isDestroyed) return;
 
   for(const c of this.components)

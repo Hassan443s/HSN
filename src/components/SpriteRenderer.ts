@@ -2,7 +2,6 @@ import { Component } from "../core/Component";
 import { AssetManager } from "../core/AssetManager";
 
 export class SpriteRenderer extends Component {
- readonly image: HTMLImageElement;
  public src: string;
  width: number;
  height: number;
@@ -26,13 +25,13 @@ export class SpriteRenderer extends Component {
     throw new Error(`Image "${src}" is not 
     loaded.`);
   }
-
-this.image = image;
  }
 
  draw(ctx: CanvasRenderingContext2D): void{
 
-  if(!this.image.complete) return;
+  const image = AssetManager.getImage(this.src);
+
+  if(!image || !image.complete) return;
 
   ctx.save();
 
@@ -55,7 +54,7 @@ this.image = image;
   }
 
  ctx.drawImage(
-  this.image,
+  image,
   -this.width * this.pivotX,
   -this.height * this.pivotY,
   this.width,

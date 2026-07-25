@@ -38,7 +38,7 @@ export class MuiltyCamera{
   let time = 0;
   let cam1StartX = cam1.transform.x;
 
-  scene.OnFrame = (delta) =>{
+  scene.OnFrame((delta:number)=>{
    //cam1 => move. event
    //cam2 => shake event
 
@@ -50,7 +50,7 @@ export class MuiltyCamera{
    //shake event for cam 2
    c.shake(2,1);
 
-  }
+  });
 
  //end and run
   this.engine.addScene(scene);

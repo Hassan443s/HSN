@@ -136,8 +136,13 @@ gameloop(time: number): void {
   
   this.lastTime = time;
   
-  this.update();
-  this.render();
+  try{
+   this.update();
+   this.render();
+  }catch(err){
+   console.error(err);
+  }
+
   Touch.update();
   
   this.rafId =  

@@ -48,17 +48,17 @@ export class CameraMove {
 
   hintText.addComponent(new TextRenderer(
   //[!] Go to TextRenderer.ts for info [!]
-   "Camera Test!","32px Arial","#49bfe5"
+   "drag the camera!","32px Arial","#49bfe5"
    ,true,"#000000"
   ));
 
   let c1 = 
    hintText.getComponent(TextRenderer);
 
-  scene.OnFrame = (_delta) => {
+  scene.OnFrame((_delta:number)=>{
    if(!c1) return;
    c1.color = rB.rbw(2);
-  };
+  });
 
  //[3] Scene
   //[!] Go to Scene.ts for info [!]

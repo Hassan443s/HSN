@@ -5,6 +5,12 @@ export class AssetManager {
 
   static loadImage(name: string, src: string): Promise<HTMLImageElement> {
 
+    const existing = this.images.get(name);
+
+    if (existing && existing.complete && this.sources.get(name) === src) {
+      return Promise.resolve(existing);
+    }
+
     return new Promise((resolve, reject) => {
 
       const image = new Image();

@@ -31,13 +31,13 @@ export class ClickGame{
 
   let gText = text.getComponent(TextRenderer);
 
-  scene.OnFrame = (_delta) => {
+  scene.OnFrame((_delta:number) =>{
    if(!gText) return;
-   if(Touch.pressed){
+   if(Touch.justPressed){
     score += 1;
-    gText.text= `Your score is: ${score*5000000}`;
+    gText.text= `Your score is: ${score}`;
    }
-  }
+  });
 
   //end and run
   this.engine.addScene(scene);
