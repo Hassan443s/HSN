@@ -68,8 +68,5 @@ export class CameraMove {
   scene.add(icon);
   this.engine.loadScene(scene);
 
-  // [!!!!!!!!!!!!!!!!!!!]
-  //END[✓] No © have fun :)
-  // [!!!!!!!!!!!!!!!!!!!]
  }
 }
