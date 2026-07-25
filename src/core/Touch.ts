@@ -9,6 +9,7 @@ export class Touch {
   private static onTouchStart = (e: TouchEvent) => {
 
     e.preventDefault();
+   if(Touch.pressed) return;
 
     const touch = e.touches[0];
     if (!touch) return;
@@ -37,7 +38,9 @@ export class Touch {
 
   };
 
-  private static onTouchEnd = () => {
+  private static onTouchEnd = (e: TouchEvent) => {
+
+   if(e.touches.length > 0) return;
 
     Touch.pressed = false;
     Touch.justReleased = true;

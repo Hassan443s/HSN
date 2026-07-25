@@ -8,8 +8,8 @@ export class EntryPoint{
    //new Examples.CameraMove(engine);
 
   //(Ex2) - Transforms Test
-  const app =
-   new Examples.Transforms(engine);
+   //const app =
+    //new Examples.Transforms(engine);
 
   //(Ex3) - MuiltyScene
    //const app =
@@ -18,6 +18,10 @@ export class EntryPoint{
   //(Ex4) - MuiltyCamera
    //const app =
     //new Examples.MuiltyCamera(engine);
+
+  //(Ex5) - ClickGame
+   const app =
+    new Examples.ClickGame(engine);
 
   //RUN APP
    app.run();
