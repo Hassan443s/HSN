@@ -1,10 +1,10 @@
 export class Colors{
 
-  r = 255;
-  g = 0;
-  b = 0;
+  private r = 255;
+  private g = 0;
+  private b = 0;
 
-  color(speed:number = 10): string {
+  rbw(speed:number = 10): string {
 
     if (this.r >= 255 && this.g < 255 && this.b <= 0) {
       this.g = Math.min(this.g + speed, 255);

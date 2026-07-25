@@ -74,7 +74,7 @@ export class CameraMove {
 
   scene.OnFrame = (_delta) => {
    if(!c1) return;
-   c1.color = rB.color(5);
+   c1.color = rB.rbw(2);
   };
 
  //[3] Scene

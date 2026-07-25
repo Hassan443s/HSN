@@ -59,8 +59,8 @@ export class Transforms {
    time += delta;
    
    icon.transform.rot += 1 * delta;
-   c1.color = rB1.color(3);
-   c2.color = rB2.color(10);
+   c1.color = rB1.rbw(3);
+   c2.color = rB2.rbw(10);
    
    if(box1.transform.x < -100) dir = 1;
    else if(box1.transform.x > 100)dir=-1;
