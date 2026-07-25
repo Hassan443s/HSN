@@ -68,3 +68,4 @@ HSN Engine is an open-source project, and every contribution, suggestion, or bug
 ---
 
 Made with ❤️ for mobile game developers.
+no © have fun :)
