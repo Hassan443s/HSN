@@ -47,7 +47,7 @@ export class MuiltyScene {
   scene2.add(cam2);
   scene2.add(text);
 
-  this.engine.loadScene(scene2);//|scene2
+  this.engine.loadScene(scene1);//|scene2
  }
 
 }
