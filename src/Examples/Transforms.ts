@@ -16,7 +16,7 @@ export class Transforms {
   this.engine = eng;
  }
 
- async play() : Promise<void>{
+ async run() : Promise<void>{
 
   await AssetManager.loadImage(
    "app","/images/App.png"
@@ -69,8 +69,7 @@ export class Transforms {
    box1.transform.rot +=180 * delta * dir;
    
    box2.transform.rot +=Math.PI *2* delta;
-   box2.transform.y =box2StartY + 
-    Math.sin(time * 3)*100
+   box2.transform.y =box2StartY + Math.sin(time * 3)*100
    
    let scale =1 + Math.sin(time * 5)* 0.2;
    icon.transform.scaleX = scale;

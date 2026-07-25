@@ -1,3 +1,4 @@
+//Engine core
 import { Scene } from "./Scene";
 import { Touch } from "./Touch";
 import { EntryPoint} from "./EntryPoint";
@@ -52,12 +53,31 @@ export class Engine {
  loadScene(scene: Scene): void
  {
 
-  this.currentScene?.destroy();
+  this.currentScene?.exit();
   scene.engine = this;
   this.currentScene = scene;
-  this.currentScene.start();
+
+  if (!scene.hasStarted) {
+   this.currentScene.start();
+  } else {
+   this.currentScene.enter();
+  }
 
  }
+
+ destroyScene(scene: Scene): void {
+
+  if (this.currentScene === scene) {
+   this.currentScene = null;
+  }
+
+  scene.destroy();
+
+  const idx = this.scenes.indexOf(scene);
+  if (idx !== -1) this.scenes.splice(idx, 1);
+
+ }
+
 
  resize(): void {
 

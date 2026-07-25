@@ -3,15 +3,23 @@ import * as Examples from "../Examples";
 
 export class EntryPoint{
  static main(engine: Engine){
-  //(Ex) - Camera Test
+  //(Ex1) - Camera Test
   //const app =
    //new Examples.CameraMove(engine);
 
-  //(Ex) - Transforms Test
+  //(Ex2) - Transforms Test
   const app =
    new Examples.Transforms(engine);
 
+  //(Ex3) - MuiltyScene
+   //const app =
+    //new Examples.MuiltyScene(engine);
+
+  //(Ex4) - MuiltyCamera
+   //const app =
+    //new Examples.MuiltyCamera(engine);
+
   //RUN APP
-  app.play();
+   app.run();
  }
 }

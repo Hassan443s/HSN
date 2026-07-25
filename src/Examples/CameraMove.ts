@@ -20,7 +20,7 @@ export class CameraMove {
   this.engine = eng; //engine
  }
  
- async play(): Promise<void>{ //loading...
+ async run(): Promise<void>{ //loading...
 
   await AssetManager.loadImage(
    //name , src
@@ -66,11 +66,6 @@ export class CameraMove {
 
   let c1 = 
    hintText.getComponent(TextRenderer);
-  
-  /* Test Camera shake for more read:
-   Camera.ts - shake
-  cam.getComponent(Camera)?.shake(10,20);
-  */
 
   scene.OnFrame = (_delta) => {
    if(!c1) return;
