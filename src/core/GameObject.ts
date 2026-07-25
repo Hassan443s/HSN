@@ -8,11 +8,6 @@ export class GameObject {
  private components: Component[] = [];
  public readonly transform: Transform;
  public scene?: Scene;
- public OnStart? : (self: GameObject) =>
- void;
- private _onstart : boolean = false;
- public OnUpdate? : (self: GameObject,delta: number)
- => void;
 
  constructor(){
   this.transform = new Transform();
@@ -88,14 +83,9 @@ export class GameObject {
 
 
  start(){
-  
-  if(this._onstart) return;
 
   if(this.isDestroyed) return;
   if(!this.transform) return;
-  this._onstart = true;
-
-  if(this.OnStart) this.OnStart(this);
 
   for(const c of this.components)
    c.start();
@@ -105,10 +95,6 @@ export class GameObject {
  update(delta:number){
 
   if(this.isDestroyed) return;
-  if(this.OnUpdate)
-  {
-   this.OnUpdate(this,delta);
-  }
 
   for(const c of this.components)
    c.update(delta);

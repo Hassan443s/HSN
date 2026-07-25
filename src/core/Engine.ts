@@ -1,6 +1,7 @@
 import { Scene } from "./Scene";
 import { Touch } from "./Touch";
 import { EntryPoint} from "./EntryPoint";
+import { AssetManager } from "./AssetManager";
 
 export class Engine {
 
@@ -10,6 +11,8 @@ export class Engine {
  private loop = this.gameloop.bind(this);
  private resizeHandler = 
   this.resize.bind(this);
+ private visibilityHandler =
+  this.onVisibilityChange.bind(this);
  private rafId: number | null = null;
  private running = false;
 
@@ -38,6 +41,7 @@ export class Engine {
    this.resize();
 
    window.addEventListener("resize",  this.resizeHandler);
+   document.addEventListener("visibilitychange", this.visibilityHandler);
 
  }
 
@@ -72,7 +76,17 @@ export class Engine {
 
  }
 
+ onVisibilityChange(): void {
 
+  if (document.visibilityState === "visible") {
+   // رجعنا للصفحة: تأكد إن الصور كلها سليمة، وأعد تحميل أي وحدة اتفرّغت من الذاكرة
+   AssetManager.reloadIfBroken();
+
+   // صفّر lastTime عشان أول فريم بعد الرجوع ما يعمل قفزة كبيرة بالـ delta
+   this.lastTime = 0;
+  }
+
+ }
 
  start(): void {
 
@@ -120,6 +134,7 @@ this.rafId = null;
 }
 
 window.removeEventListener("resize", this.resizeHandler);
+document.removeEventListener("visibilitychange", this.visibilityHandler);
 
 this.currentScene?.destroy();
 Touch.destroy(this.canvas);

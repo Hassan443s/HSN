@@ -7,10 +7,23 @@ export class Camera extends Component {
 	public smooth: boolean = false;
 	public smoothSpeed: number = 5;
 
+	// --- Shake ---
+	private shakeDuration: number = 0;
+	private shakeTimer: number = 0;
+	private shakeIntensity: number = 0;
+	private shakeOffsetX: number = 0;
+	private shakeOffsetY: number = 0;
+
 	constructor(zoom: number = 1) {
 		super();
 		this.zoom = zoom;
 		this.name = "Camera Component";
+	}
+
+	shake(intensity: number, duration: number) {
+		this.shakeIntensity = intensity;
+		this.shakeDuration = duration;
+		this.shakeTimer = duration;
 	}
 
 	apply(
@@ -23,8 +36,9 @@ export class Camera extends Component {
 		const t = this.gameObject.transform;
 
 		ctx.translate(viewWidth / 2, viewHeight / 2);
+		ctx.rotate(-t.rot);
 		ctx.scale(this.zoom, this.zoom);
-		ctx.translate(-t.x, -t.y);
+		ctx.translate(-t.x + this.shakeOffsetX, -t.y + this.shakeOffsetY);
 	}
 
 	reset(ctx: CanvasRenderingContext2D) {
@@ -36,21 +50,44 @@ export class Camera extends Component {
 	}
 
 	update(delta: number) {
-		if (!this.target) return;
 
-		const camera = this.gameObject.transform;
-		const target = this.target.transform;
+		if (this.target) {
 
-		if (this.smooth) {
-			camera.x += (target.x - camera.x) *
-			this.smoothSpeed * delta;
+			const camera = this.gameObject.transform;
+			const target = this.target.transform;
 
-			camera.y += (target.y - camera.y) *
-			this.smoothSpeed * delta;
-		} else {
-			camera.x = target.x;
-			camera.y = target.y;
+			if (this.smooth) {
+				camera.x += (target.x - camera.x) *
+				this.smoothSpeed * delta;
+
+				camera.y += (target.y - camera.y) *
+				this.smoothSpeed * delta;
+			} else {
+				camera.x = target.x;
+				camera.y = target.y;
+			}
 		}
+
+		this.updateShake(delta);
+	}
+
+	private updateShake(delta: number) {
+
+		if (this.shakeTimer <= 0) {
+			this.shakeOffsetX = 0;
+			this.shakeOffsetY = 0;
+			return;
+		}
+
+		this.shakeTimer -= delta;
+
+		const falloff = Math.max(this.shakeTimer / this.shakeDuration, 0);
+		const power = this.shakeIntensity * falloff;
+
+		const angle = Math.random() * Math.PI * 2;
+		this.shakeOffsetX = Math.cos(angle) * power;
+		this.shakeOffsetY = Math.sin(angle) * power;
+
 	}
 
 	screenToWorld(
@@ -62,9 +99,15 @@ export class Camera extends Component {
 
 		const t = this.gameObject.transform;
 
+		const dx = (screenX - viewWidth / 2) / this.zoom;
+		const dy = (screenY - viewHeight / 2) / this.zoom;
+
+		const cos = Math.cos(t.rot);
+		const sin = Math.sin(t.rot);
+
 		return {
-			x: t.x + (screenX - viewWidth / 2) / this.zoom,
-			y: t.y + (screenY - viewHeight / 2) / this.zoom
+			x: t.x + (dx * cos + dy * sin),
+			y: t.y + (-dx * sin + dy * cos)
 		};
 	}
 }

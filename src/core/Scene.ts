@@ -7,7 +7,8 @@ export class Scene{
  public objects: GameObject[] = [];
  activeCamera?: Camera;
  engine?: Engine;
-
+ public OnStart? : () => void;
+ public OnFrame? : (delta:number) => void;
  add(obj: GameObject): void{
   const camera= obj.getComponent(Camera);
   if(camera) this.activeCamera=camera;
@@ -33,12 +34,14 @@ export class Scene{
   for(const objs of this.objects){
    objs.start();
   }
+  if(this.OnStart) this.OnStart();
  }
  
  update(delta: number) : void{
   for(const objs of this.objects){
    objs.update(delta);
   }
+  if(this.OnFrame) this.OnFrame(delta);
  }
  
  draw(ctx: CanvasRenderingContext2D, width: number, height: number): void {

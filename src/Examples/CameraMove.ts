@@ -6,12 +6,13 @@ import {TextRenderer} from "../components/TextRenderer";
 import {Camera} from "../components/Camera";
 import {TouchMove} from "../components/TouchMove";
 import {SpriteRenderer} from "../components/SpriteRenderer";
+import {Colors} from "../tools/Colors";
 
 //[!] Touch input system only [!]. Keyboard and mouse support coming later.
 
 //[!] Tap and drag on the screen to move the Camera.[>] For more go to TouchMove.ts
 
-export class CamObject {
+export class CameraMove {
 
  engine: Engine;
 
@@ -28,7 +29,6 @@ export class CamObject {
 
  //[1] Init Objects :
   const scene = new Scene();
-  this.engine.addScene(scene);
   const cam = new GameObject();
   const hintText = new GameObject();
   const icon = new GameObject();
@@ -46,6 +46,7 @@ export class CamObject {
   */
 
   icon.transform.y -= 50;
+  const rB = new Colors();
 
  //[2] Add Components
 
@@ -60,11 +61,25 @@ export class CamObject {
   hintText.addComponent(new TextRenderer(
   //[!] Go to TextRenderer.ts for info [!]
    "Camera Test!","32px Arial","#49bfe5"
-   ,true,"red"
+   ,true,"#000000"
   ));
+
+  let c1 = 
+   hintText.getComponent(TextRenderer);
+  
+  /* Test Camera shake for more read:
+   Camera.ts - shake
+  cam.getComponent(Camera)?.shake(10,20);
+  */
+
+  scene.OnFrame = (_delta) => {
+   if(!c1) return;
+   c1.color = rB.color(5);
+  };
 
  //[3] Scene
   //[!] Go to Scene.ts for info [!]
+  this.engine.addScene(scene);
   scene.add(cam);
   scene.add(hintText);
   scene.add(icon);
