@@ -8,7 +8,6 @@ export class GameObject {
  private components: Component[] = [];
  public readonly transform: Transform;
  public scene?: Scene;
- public isUI: boolean = false;
 
  constructor(){
   this.transform = new Transform();

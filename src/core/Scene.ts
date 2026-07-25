@@ -82,7 +82,6 @@ export class Scene{
 
   for (const objs of this.objects) {
    if (this.activeCamera && objs === this.activeCamera.gameObject) continue;
-   if (objs.isUI) continue;
    objs.draw(ctx);
   }
 
@@ -91,7 +90,6 @@ export class Scene{
   }
 
   for (const objs of this.objects) {
-   if (!objs.isUI) continue;
    objs.draw(ctx);
   }
 

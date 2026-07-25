@@ -1,27 +1,25 @@
 import {Engine} from "./Engine";
-import * as Examples from "../Examples";
+import * as examples from "../examples";
 
 export class EntryPoint{
  static main(engine: Engine){
   //(Ex1) - Camera Test
-  //const app =
-   //new Examples.CameraMove(engine);
+   //const app = new examples.CameraMove(engine);
 
   //(Ex2) - Transforms Test
-   const app =
-    new Examples.Transforms(engine);
+   const app = new examples.Transforms(engine);
 
   //(Ex3) - MuiltyScene
-   //const app =
-    //new Examples.MuiltyScene(engine);
+   //const app = new examples.MultiScene(engine);
 
   //(Ex4) - MuiltyCamera
-   //const app =
-    //new Examples.MuiltyCamera(engine);
+   //const app = new examples.MultiCamera(engine);
 
   //(Ex5) - ClickGame
-   //const app =
-   // new Examples.ClickGame(engine);
+   //const app = new examples.ClickGame(engine);
+
+ //(Ex6) - ColisionPoint
+  //const app = new examples.TouchInspector(engine);
 
   //RUN APP
    app.run();
