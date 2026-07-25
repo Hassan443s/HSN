@@ -1,103 +1,144 @@
 import type { Scene } from "./Scene";
-import {Component} from "./Component";
-import {Transform} from "../components/Transform";
+import { Component } from "./Component";
+import { Transform } from "../components/Transform";
 
 export class GameObject {
 
- public isDestroyed: boolean = false;
- private components: Component[] = [];
- public readonly transform: Transform;
- public scene?: Scene;
+  public isDestroyed: boolean = false;
 
- constructor(){
-  this.transform = new Transform();
-  this.addComponent(this.transform);
- }
+  /** طلب تدمير في نهاية الفريم (آمن أثناء update) */
+  public pendingDestroy: boolean = false;
 
- addComponent<T extends Component>(comp:T): T
- {
-  if(this.isDestroyed)
-    throw new Error("GameObject destroyed");
+  /** false → يتخطى update و draw بدون تدمير */
+  public active: boolean = true;
 
-  if(comp instanceof Transform &&
-     this.hasComponent(Transform))
-    throw new Error("Transform already exists");
+  public name: string = "";
 
-  comp.gameObject = this;
-  this.components.push(comp);
+  private components: Component[] = [];
+  public readonly transform: Transform;
+  public scene?: Scene;
 
-  return comp;
- }
-
- removeComponent(comp:Component):void {
-  if(this.isDestroyed) return;
-  if (comp instanceof Transform) {
-   console.log("transform cannot be deleted");
-   return;
+  constructor(name: string = "") {
+    this.name = name;
+    this.transform = new Transform();
+    this.addComponent(this.transform);
   }
 
-  const index=this.components.indexOf(comp);
+  addComponent<T extends Component>(comp: T): T {
+    if (this.isDestroyed || this.pendingDestroy) {
+      throw new Error("Cannot add component to destroyed GameObject");
+    }
 
-  if(index === -1) return;
+    if (comp instanceof Transform && this.hasComponent(Transform)) {
+      throw new Error("Transform already exists");
+    }
 
-  this.components.splice(index,1);
-  comp.destroy();
- }
+    comp.gameObject = this;
+    this.components.push(comp);
 
- getComponent<T extends Component>(
-  type:new(...args:any[])=>T
- ):T | undefined {
-  if(this.isDestroyed) return;
+    if (this.scene?.hasStarted && !comp.hasStarted) {
+      comp.start();
+      comp.hasStarted = true;
+    }
 
-  return this.components.find(
-   c => c instanceof type
-  ) as T | undefined;
- }
+    return comp;
+  }
 
- getComponents<T extends Component>(
-  type:new(...args:any[])=>T
- ):T[] {
-  if(this.isDestroyed) return [];
+  removeComponent(comp: Component): void {
+    if (this.isDestroyed) return;
 
-  return this.components.filter(
-   c => c instanceof type
-  ) as T[];
- }
+    if (comp instanceof Transform) {
+      console.warn("Transform cannot be removed");
+      return;
+    }
 
- hasComponent<T extends Component>(type: new (...args: any[]) => T): boolean {
-  return this.components.some(c => c instanceof type);
- }
+    const index = this.components.indexOf(comp);
+    if (index === -1) return;
 
- start(){
-  if(this.isDestroyed) return;
-  if(!this.transform) return;
+    this.components.splice(index, 1);
+    comp.destroy();
+  }
 
-  for(const c of this.components)
-   c.start();
- }
+  getComponent<T extends Component>(
+    type: new (...args: any[]) => T
+  ): T | undefined {
+    if (this.isDestroyed) return undefined;
 
- update(delta:number){
-  if(this.isDestroyed) return;
+    return this.components.find(
+      (c) => c instanceof type
+    ) as T | undefined;
+  }
 
-  for(const c of this.components)
-   c.update(delta);
- }
+  getComponents<T extends Component>(
+    type: new (...args: any[]) => T
+  ): T[] {
+    if (this.isDestroyed) return [];
 
- draw(ctx:CanvasRenderingContext2D){
-  if(this.isDestroyed) return;
+    return this.components.filter(
+      (c) => c instanceof type
+    ) as T[];
+  }
 
-  for(const c of this.components)
-   c.draw(ctx);
- }
+  hasComponent<T extends Component>(
+    type: new (...args: any[]) => T
+  ): boolean {
+    return this.components.some((c) => c instanceof type);
+  }
 
- destroy(){
-  if(this.isDestroyed) return;
+  start(): void {
+    if (this.isDestroyed || this.pendingDestroy || !this.active) return;
 
-  for(const c of this.components)
-   c.destroy();
+    for (const c of this.components) {
+      if (!c.hasStarted) {
+        c.start();
+        c.hasStarted = true;
+      }
+    }
+  }
 
-  this.components = [];
-  this.isDestroyed = true;
- }
+  update(delta: number): void {
+    if (this.isDestroyed || this.pendingDestroy || !this.active) return;
 
+    const list = this.components.slice();
+    for (const c of list) {
+      if (c.enabled) c.update(delta);
+    }
+  }
+
+  draw(ctx: CanvasRenderingContext2D): void {
+    if (this.isDestroyed || this.pendingDestroy || !this.active) return;
+
+    const list = this.components.slice();
+    for (const c of list) {
+      if (c.enabled) c.draw(ctx);
+    }
+  }
+
+  /**
+   * طلب تدمير آمن — يُنفَّذ في نهاية الفريم من المشهد.
+   * استخدم هذا أثناء update / OnFrame.
+   */
+  destroy(): void {
+    if (this.isDestroyed || this.pendingDestroy) return;
+    this.pendingDestroy = true;
+    this.active = false;
+  }
+
+  /**
+   * تدمير فوري — يستدعيه المشهد فقط في نهاية الفريم أو عند destroy المشهد.
+   * لا تستدعِه من منطق اللعبة مباشرة.
+   */
+  forceDestroy(): void {
+    if (this.isDestroyed) return;
+
+    for (const c of this.components) {
+      c.destroy();
+    }
+
+    this.components = [];
+    this.isDestroyed = true;
+    this.pendingDestroy = false;
+    this.active = false;
+    this.scene = undefined;
+  }
 }

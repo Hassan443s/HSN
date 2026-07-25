@@ -101,7 +101,7 @@ export class Transforms {
 
 
   camera.addComponent(
-   new Camera(0.65)
+   new Camera(0.3)
   );
 
 
@@ -118,7 +118,7 @@ export class Transforms {
   // ==========================================================
 
 
-  scaleBox.transform.y = -120;
+  scaleBox.transform.y = -130;
 
 
   scaleBox.addComponent(
@@ -183,7 +183,7 @@ export class Transforms {
     100,
     "hotpink",
     true,
-    "white",
+    "black",
     3
    )
   );
@@ -198,12 +198,12 @@ export class Transforms {
   // ==========================================================
 
 
-  title.transform.y = -250;
+  title.transform.y = -330;
 
 
   title.addComponent(
    new TextRenderer(
-    "Transform System",
+    "[Transform System]",
     "bold 45px Arial",
     "white",
     true,
@@ -345,17 +345,10 @@ export class Transforms {
 
 
    text.text =
-`Transform System
-
-Scale:
-${scale.toFixed(2)}
-
-Position X:
-${moveBox.transform.x.toFixed(0)}
-
-Rotation:
-${rotateBox.transform.rot.toFixed(2)}`;
-
+`[Transform System]
+Scale: ${scale.toFixed(2)}
+Position X: ${moveBox.transform.x.toFixed(1)} Y: ${moveBox.transform.y.toFixed(1)}
+Rotation: ${rotateBox.transform.rot.toFixed(2)}`;
   });
 
 

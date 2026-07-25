@@ -1,112 +1,167 @@
-import {GameObject} from "./GameObject";
-import {Camera} from "../components/Camera";
+import { GameObject } from "./GameObject";
+import { Camera } from "../components/Camera";
 import type { Engine } from "./Engine";
 
-export class Scene{
+export class Scene {
 
- public objects: GameObject[] = [];
- activeCamera?: Camera;
- engine?: Engine;
- public hasStarted = false;
- private startCallbacks: (() => void)[] = [];
- private frameCallbacks: ((delta:number) => void)[] = [];
+  public objects: GameObject[] = [];
+  activeCamera?: Camera;
+  engine?: Engine;
+  public hasStarted = false;
 
- add(obj: GameObject): void{
-  const camera = obj.getComponent(Camera);
-  if(camera && !this.activeCamera) this.activeCamera = camera;
-  obj.scene = this;
-  this.objects.push(obj);
- }
+  private startCallbacks: (() => void)[] = [];
+  private frameCallbacks: ((delta: number) => void)[] = [];
 
- setActiveCamera(obj: GameObject): void {
-  const camera = obj.getComponent(Camera);
+  add(obj: GameObject): void {
+    if (obj.isDestroyed || obj.pendingDestroy) {
+      console.warn("Cannot add destroyed GameObject to scene");
+      return;
+    }
 
-  if (!camera) {
-   console.error("Camera not found in object");
-   return;
-  }
-  this.activeCamera = camera;
- }
+    if (this.objects.indexOf(obj) !== -1) return;
 
- remove(obj: GameObject): void {
-  const index = this.objects.indexOf(obj);
-  if (index === -1) return;
+    const camera = obj.getComponent(Camera);
+    if (camera && !this.activeCamera) {
+      this.activeCamera = camera;
+    }
 
-  if (this.activeCamera && obj === this.activeCamera.gameObject) {
-   this.activeCamera = undefined;
-  }
-  obj.destroy();
-  this.objects.splice(index, 1);
- }
+    obj.scene = this;
+    this.objects.push(obj);
 
- OnStart(callback: () => void): void {
-  this.startCallbacks.push(callback);
- }
-
- OnFrame(callback: (delta:number) => void): void {
-  this.frameCallbacks.push(callback);
- }
-
- constructor(){
-
- }
-
- start() : void{
-  this.hasStarted = true;
-  for(const objs of this.objects){
-   objs.start();
-  }
-  for(const cb of this.startCallbacks) cb();
- }
-
- exit(): void {
-
- }
-
- enter(): void {
-
- }
-
- update(delta: number) : void{
-  for(const objs of this.objects){
-   objs.update(delta);
-  }
-  for(const cb of this.frameCallbacks) cb(delta);
- }
-
- draw(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-
-  if (this.activeCamera) {
-   this.activeCamera.apply(ctx, width, height);
+    if (this.hasStarted) {
+      obj.start();
+    }
   }
 
-  for (const objs of this.objects) {
-   if (this.activeCamera && objs === this.activeCamera.gameObject) continue;
-   objs.draw(ctx);
+  setActiveCamera(obj: GameObject): void {
+    const camera = obj.getComponent(Camera);
+    if (!camera) {
+      console.error("Camera not found in object");
+      return;
+    }
+    this.activeCamera = camera;
   }
 
-  if (this.activeCamera) {
-   this.activeCamera.reset(ctx);
+  /**
+   * طلب إزالة آمنة (تدمير في نهاية الفريم).
+   */
+  remove(obj: GameObject): void {
+    if (!obj || obj.isDestroyed) return;
+    obj.destroy();
   }
 
-  for (const objs of this.objects) {
-   objs.draw(ctx);
+  find(name: string): GameObject | undefined {
+    return this.objects.find(
+      (o) => !o.isDestroyed && !o.pendingDestroy && o.name === name
+    );
   }
 
- }
-
- destroy() : void{
-  this.activeCamera = undefined;
-
-  for(const objs of this.objects){
-   objs.destroy();
-   objs.scene = undefined;
+  findAll(name: string): GameObject[] {
+    return this.objects.filter(
+      (o) => !o.isDestroyed && !o.pendingDestroy && o.name === name
+    );
   }
-  this.objects = [];
 
-  this.hasStarted = false;
-  this.frameCallbacks = [];
-  this.startCallbacks = [];
- }
+  OnStart(callback: () => void): void {
+    this.startCallbacks.push(callback);
+  }
 
+  OnFrame(callback: (delta: number) => void): void {
+    this.frameCallbacks.push(callback);
+  }
+
+  /** إزالة callback معيّن إن احتجت */
+  OffFrame(callback: (delta: number) => void): void {
+    const i = this.frameCallbacks.indexOf(callback);
+    if (i !== -1) this.frameCallbacks.splice(i, 1);
+  }
+
+  constructor() {}
+
+  start(): void {
+    this.hasStarted = true;
+
+    for (const obj of this.objects) {
+      obj.start();
+    }
+
+    for (const cb of this.startCallbacks) cb();
+  }
+
+  exit(): void {}
+
+  enter(): void {}
+
+  update(delta: number): void {
+    const list = this.objects.slice();
+
+    for (const obj of list) {
+      if (!obj.isDestroyed && !obj.pendingDestroy) {
+        obj.update(delta);
+      }
+    }
+
+    for (const cb of this.frameCallbacks) cb(delta);
+
+    this.processDestroyed();
+  }
+
+  draw(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+    const cam = this.activeCamera;
+
+    if (cam) {
+      cam.apply(ctx, width, height);
+    }
+
+    try {
+      for (const obj of this.objects) {
+        if (obj.isDestroyed || obj.pendingDestroy || !obj.active) continue;
+        if (cam && obj === cam.gameObject) continue;
+        obj.draw(ctx);
+      }
+    } finally {
+      if (cam) {
+        cam.reset(ctx);
+      }
+    }
+  }
+
+  /** تنظيف كل من طُلب تدميره هذا الفريم */
+  private processDestroyed(): void {
+    let i = 0;
+
+    while (i < this.objects.length) {
+      const obj = this.objects[i];
+
+      if (obj.pendingDestroy || obj.isDestroyed) {
+        if (this.activeCamera && obj === this.activeCamera.gameObject) {
+          this.activeCamera = undefined;
+        }
+
+        if (!obj.isDestroyed) {
+          obj.forceDestroy();
+        } else {
+          obj.scene = undefined;
+        }
+
+        this.objects.splice(i, 1);
+        continue;
+      }
+
+      i++;
+    }
+  }
+
+  destroy(): void {
+    this.activeCamera = undefined;
+
+    for (const obj of this.objects) {
+      obj.forceDestroy();
+    }
+
+    this.objects = [];
+    this.hasStarted = false;
+    this.frameCallbacks = [];
+    this.startCallbacks = [];
+  }
 }

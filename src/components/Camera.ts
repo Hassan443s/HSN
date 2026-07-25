@@ -2,112 +2,104 @@ import { Component } from "../core/Component";
 import type { GameObject } from "../core/GameObject";
 
 export class Camera extends Component {
-	public zoom: number;
-	public target: GameObject | null = null;
-	public smooth: boolean = false;
-	public smoothSpeed: number = 5;
+  public zoom: number;
+  public target: GameObject | null = null;
+  public smooth: boolean = false;
+  public smoothSpeed: number = 5;
 
-	// --- Shake ---
-	private shakeDuration: number = 0;
-	private shakeTimer: number = 0;
-	private shakeIntensity: number = 0;
-	private shakeOffsetX: number = 0;
-	private shakeOffsetY: number = 0;
+  // --- Shake ---
+  private shakeDuration: number = 0;
+  private shakeTimer: number = 0;
+  private shakeIntensity: number = 0;
+  private shakeOffsetX: number = 0;
+  private shakeOffsetY: number = 0;
 
-	constructor(zoom: number = 1) {
-		super();
-		this.zoom = zoom;
-		this.name = "Camera Component";
-	}
+  constructor(zoom: number = 1) {
+    super();
+    this.zoom = zoom;
+    this.name = "Camera Component";
+  }
 
-	shake(intensity: number, duration: number) {
-		this.shakeIntensity = intensity;
-		this.shakeDuration = duration;
-		this.shakeTimer = duration;
-	}
+  shake(intensity: number, duration: number) {
+    this.shakeIntensity = intensity;
+    this.shakeDuration = duration;
+    this.shakeTimer = duration;
+  }
 
-	apply(
-		ctx: CanvasRenderingContext2D,
-		viewWidth: number,
-		viewHeight: number
-	) {
-		ctx.save();
+  apply(
+    ctx: CanvasRenderingContext2D,
+    viewWidth: number,
+    viewHeight: number
+  ) {
+    ctx.save();
 
-		const t = this.gameObject.transform;
+    const t = this.gameObject.transform;
 
-		ctx.translate(viewWidth / 2, viewHeight / 2);
-		ctx.rotate(-t.rot);
-		ctx.scale(this.zoom, this.zoom);
-		ctx.translate(-t.x + this.shakeOffsetX, -t.y + this.shakeOffsetY);
-	}
+    ctx.translate(viewWidth / 2, viewHeight / 2);
+    ctx.rotate(-t.rot);
+    ctx.scale(this.zoom, this.zoom);
+    ctx.translate(-t.x + this.shakeOffsetX, -t.y + this.shakeOffsetY);
+  }
 
-	reset(ctx: CanvasRenderingContext2D) {
-		ctx.restore();
-	}
+  reset(ctx: CanvasRenderingContext2D) {
+    ctx.restore();
+  }
 
-	start() {
+  start() {}
 
-	}
+  update(delta: number) {
+    if (this.target) {
+      const camera = this.gameObject.transform;
+      const target = this.target.transform;
 
-	update(delta: number) {
+      if (this.smooth) {
+        camera.x += (target.x - camera.x) * this.smoothSpeed * delta;
+        camera.y += (target.y - camera.y) * this.smoothSpeed * delta;
+      } else {
+        camera.x = target.x;
+        camera.y = target.y;
+      }
+    }
 
-		if (this.target) {
+    this.updateShake(delta);
+  }
 
-			const camera = this.gameObject.transform;
-			const target = this.target.transform;
+  private updateShake(delta: number) {
+    if (this.shakeTimer <= 0) {
+      this.shakeOffsetX = 0;
+      this.shakeOffsetY = 0;
+      return;
+    }
 
-			if (this.smooth) {
-				camera.x += (target.x - camera.x) *
-				this.smoothSpeed * delta;
+    this.shakeTimer -= delta;
 
-				camera.y += (target.y - camera.y) *
-				this.smoothSpeed * delta;
-			} else {
-				camera.x = target.x;
-				camera.y = target.y;
-			}
-		}
+    const falloff = Math.max(this.shakeTimer / this.shakeDuration, 0);
+    const power = this.shakeIntensity * falloff;
 
-		this.updateShake(delta);
-	}
+    const angle = Math.random() * Math.PI * 2;
+    this.shakeOffsetX = Math.cos(angle) * power;
+    this.shakeOffsetY = Math.sin(angle) * power;
+  }
 
-	private updateShake(delta: number) {
+  screenToWorld(
+    screenX: number,
+    screenY: number,
+    viewWidth: number,
+    viewHeight: number
+  ): { x: number; y: number } {
+    const t = this.gameObject.transform;
 
-		if (this.shakeTimer <= 0) {
-			this.shakeOffsetX = 0;
-			this.shakeOffsetY = 0;
-			return;
-		}
+    // عكس: مركز الشاشة → إزالة الزوم → عكس دوران الكاميرا → إضافة موضع الكاميرا
+    const dx = (screenX - viewWidth / 2) / this.zoom;
+    const dy = (screenY - viewHeight / 2) / this.zoom;
 
-		this.shakeTimer -= delta;
+    const cos = Math.cos(t.rot);
+    const sin = Math.sin(t.rot);
 
-		const falloff = Math.max(this.shakeTimer / this.shakeDuration, 0);
-		const power = this.shakeIntensity * falloff;
-
-		const angle = Math.random() * Math.PI * 2;
-		this.shakeOffsetX = Math.cos(angle) * power;
-		this.shakeOffsetY = Math.sin(angle) * power;
-
-	}
-
-	screenToWorld(
-		screenX: number,
-		screenY: number,
-		viewWidth: number,
-		viewHeight: number
-	): { x: number; y: number } {
-
-		const t = this.gameObject.transform;
-
-		const dx = (screenX - viewWidth / 2) / this.zoom;
-		const dy = (screenY - viewHeight / 2) / this.zoom;
-
-		const cos = Math.cos(t.rot);
-		const sin = Math.sin(t.rot);
-
-		return {
-			x: t.x + (dx * cos + dy * sin),
-			y: t.y + (-dx * sin + dy * cos)
-		};
-	}
+    // R(+rot) * (dx, dy)
+    return {
+      x: t.x + (dx * cos - dy * sin) - this.shakeOffsetX,
+      y: t.y + (dx * sin + dy * cos) - this.shakeOffsetY,
+    };
+  }
 }
