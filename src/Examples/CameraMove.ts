@@ -33,18 +33,6 @@ export class CameraMove {
   const hintText = new GameObject();
   const icon = new GameObject();
 
-  //[%]: Transforms: name.transform.? = ?
-  /*
-  (note) Read {\\} for moveing [/[c]]
-  (x) Poss => name.transform.x = num;
-  (y) Poss => name.transform.t = num;
-  (a) Rotation => name.transform.rot;
-  (x) Scale => name.transform.scaleX;
-  (y) Scale => name.transform.scaleY;
-  (note) Go to Transform.ts for details
-  [[✓] [✓] [✓] [✓] [✓] [✓] [✓] [✓] [✓]]
-  */
-
   icon.transform.y -= 50;
   const rB = new Colors();
 

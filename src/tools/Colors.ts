@@ -27,4 +27,13 @@ export class Colors{
 
     return `rgb(${this.r}, ${this.g}, ${this.b})`;
   }
+
+ random(): string{
+  let r = Math.random() * 255;
+  let g = Math.random() * 255;
+  let b = Math.random() * 255;
+  return `rgb(${r}, ${g}, ${b})`;
+ }
+
+ 
 }

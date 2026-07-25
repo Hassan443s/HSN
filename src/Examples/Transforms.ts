@@ -8,6 +8,19 @@ import {SpriteRenderer} from "../components/SpriteRenderer";
 import {BoxRenderer} from "../components/BoxRenderer";
 import {Colors}from "../tools/Colors";
 
+  //[%]: Transforms: name.transform.? = ?
+  /*
+  (note) Read {\\} for moveing [/[c]]
+  (x) Pos  => name.transform.x = num;
+  (y) Pos  => name.transform.y = num;
+  (a) Rotation => name.transform.rot;
+  (x) Scale => name.transform.scaleX;
+  (y) Scale => name.transform.scaleY;
+  (note) Go to Transform.ts for details
+  [[✓] [✓] [✓] [✓] [✓] [✓] [✓] [✓] [✓]]
+  */
+
+
 export class Transforms {
 
  engine: Engine;
@@ -45,7 +58,7 @@ export class Transforms {
    80,80,"red"
   ));
   box2.addComponent(new BoxRenderer(
-   80,80,"hotpink",true,"lightgreen",1
+   80,80,"hotpink",true,"white",2
   ));
 
   let c1 = box1.getComponent(BoxRenderer);
@@ -58,7 +71,7 @@ export class Transforms {
 
    time += delta;
    
-   icon.transform.rot += 1 * delta;
+   icon.transform.rot += Math.PI * delta;
    c1.color = rB1.rbw(3);
    c2.color = rB2.rbw(10);
    
@@ -71,7 +84,7 @@ export class Transforms {
    box2.transform.rot +=Math.PI *2* delta;
    box2.transform.y =box2StartY + Math.sin(time * 3)*100
    
-   let scale =1 + Math.sin(time * 5)* 0.2;
+   let scale =1 + Math.sin(time * 8)* 0.2;
    icon.transform.scaleX = scale;
    icon.transform.scaleY = scale;
    
