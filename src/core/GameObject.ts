@@ -6,10 +6,8 @@ export class GameObject {
 
   public isDestroyed: boolean = false;
 
-  /** طلب تدمير في نهاية الفريم (آمن أثناء update) */
   public pendingDestroy: boolean = false;
 
-  /** false → يتخطى update و draw بدون تدمير */
   public active: boolean = true;
 
   public name: string = "";
@@ -69,16 +67,6 @@ export class GameObject {
     ) as T | undefined;
   }
 
-  getComponents<T extends Component>(
-    type: new (...args: any[]) => T
-  ): T[] {
-    if (this.isDestroyed) return [];
-
-    return this.components.filter(
-      (c) => c instanceof type
-    ) as T[];
-  }
-
   hasComponent<T extends Component>(
     type: new (...args: any[]) => T
   ): boolean {
@@ -114,20 +102,12 @@ export class GameObject {
     }
   }
 
-  /**
-   * طلب تدمير آمن — يُنفَّذ في نهاية الفريم من المشهد.
-   * استخدم هذا أثناء update / OnFrame.
-   */
   destroy(): void {
     if (this.isDestroyed || this.pendingDestroy) return;
     this.pendingDestroy = true;
     this.active = false;
   }
 
-  /**
-   * تدمير فوري — يستدعيه المشهد فقط في نهاية الفريم أو عند destroy المشهد.
-   * لا تستدعِه من منطق اللعبة مباشرة.
-   */
   forceDestroy(): void {
     if (this.isDestroyed) return;
 

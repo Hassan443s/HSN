@@ -5,143 +5,176 @@ import { Touch } from "../core/Touch";
 
 import { Camera } from "../components/Camera";
 import { BoxRenderer } from "../components/BoxRenderer";
+import { CircleRenderer } from "../components/CircleRenderer";
 import { TextRenderer } from "../components/TextRenderer";
 
 import { Collision } from "../physics/Collision";
-import { Colors } from "../tools/Colors";
 
 
 // ==========================================================
 // Touch Inspector Demo
 //
+// A debug-style showcase for mobile touch → world hit testing.
+//
 // Demonstrates:
 //
-// • Touch input.
-// • Screen to world conversion.
-// • Point collision.
-// • Object hover effect.
-// • Real-time information display.
+// • Touch screen coordinates (Touch.x / Touch.y)
+// • Camera.screenToWorld conversion
+// • Collision.pointInObject hover tests
+// • Live pointer drawn in world space
+// • Press / release state from Touch
+// • Smooth hover scale feedback
 //
-// Systems:
-// Touch + Camera + Collision + Components
+// Core pipeline:
+//
+// 1. Finger on screen     -> Touch.x, Touch.y (pixels)
+// 2. Convert              -> camera.screenToWorld(...)
+// 3. Move pointer object  -> pointer.transform = world point
+// 4. Hit test target      -> Collision.pointInObject(...)
+// 5. React                -> color, scale, HUD text
+//
+// Touch flags:
+//
+// Touch.pressed       -> finger is down
+// Touch.justPressed   -> became pressed this frame
+// Touch.justReleased  -> became released this frame
+//
+// Why screenToWorld is required:
+//
+// UI fingers use screen space.
+// Gameplay objects use world space under the camera.
+// Mixing them without conversion breaks hit tests.
+//
+// Related files:
+// Touch.ts · Camera.ts · Collision.ts
 // ==========================================================
 
 
 export class TouchInspector {
 
-
   engine: Engine;
-
 
   constructor(engine: Engine) {
     this.engine = engine;
   }
 
-
-
   async run(): Promise<void> {
 
 
-    const colors = new Colors();
+    // ==========================================================
+    // Config
+    // ==========================================================
+
+    const targetSize = 150;
 
 
     // ==========================================================
-    // Create Scene
+    // Scene & objects
     // ==========================================================
 
     const scene = new Scene();
 
-
-
-    // ==========================================================
-    // Create Objects
-    // ==========================================================
-
-    const cameraObject = new GameObject();
-
-    const target = new GameObject();
-
-    const pointer = new GameObject();
-
-    const info = new GameObject();
-
+    const cameraObject = new GameObject("camera");
+    const panel = new GameObject("panel");
+    const target = new GameObject("target");
+    const pointer = new GameObject("pointer");
+    const pointerRing = new GameObject("pointerRing");
+    const info = new GameObject("info");
+    const coords = new GameObject("coords");
+    const stateText = new GameObject("state");
 
 
     // ==========================================================
     // Camera
     // ==========================================================
 
-    cameraObject.addComponent(
-      new Camera()
+    cameraObject.addComponent(new Camera(1));
+    const camera = cameraObject.getComponent(Camera);
+
+
+    // ==========================================================
+    // Background panel
+    // ==========================================================
+
+    panel.addComponent(
+      new BoxRenderer(420, 520, "#12161e", true, "#2a3344", 2)
     );
 
 
-    const camera =
-      cameraObject.getComponent(Camera);
-
-
-
     // ==========================================================
-    // Target Object
+    // Target (hover box)
     // ==========================================================
 
-    const size = 120;
-
+    target.transform.y = 40;
 
     target.addComponent(
-      new BoxRenderer(
-        size,
-        size,
-        "darkorange",
-        true,
+      new BoxRenderer(targetSize, targetSize, "#ea580c", true, "white", 3)
+    );
+
+    const targetRenderer = target.getComponent(BoxRenderer);
+
+
+    // ==========================================================
+    // Pointer + ring
+    //
+    // Follows the finger in world space after conversion.
+    // ==========================================================
+
+    pointer.addComponent(
+      new CircleRenderer(10, "#22d3ee", true, "white", 2)
+    );
+
+    pointerRing.addComponent(
+      new CircleRenderer(22, "transparent", true, "rgba(34,211,238,0.45)", 2)
+    );
+
+    const pointerRenderer = pointer.getComponent(CircleRenderer);
+    const ringRenderer = pointerRing.getComponent(CircleRenderer);
+
+
+    // ==========================================================
+    // HUD
+    // ==========================================================
+
+    info.transform.y = -200;
+    info.addComponent(
+      new TextRenderer(
+        "Touch Inspector",
+        "bold 34px Arial",
         "white",
+        true,
+        "black",
         3
       )
     );
 
-
-    const targetRenderer =
-      target.getComponent(BoxRenderer);
-
-
-
-    // ==========================================================
-    // Touch Pointer
-    // ==========================================================
-
-    pointer.addComponent(
-      new BoxRenderer(
-        16,
-        16,
-        "cyan"
-      )
-    );
-
-
-    const pointerRenderer =
-      pointer.getComponent(BoxRenderer);
-
-
-
-    // ==========================================================
-    // Info Text
-    // ==========================================================
-
-    info.transform.y = -170;
-
-
-    info.addComponent(
+    stateText.transform.y = -145;
+    stateText.addComponent(
       new TextRenderer(
         "Move your finger",
-        "bold 32px Arial",
-        "white"
+        "bold 26px Arial",
+        "white",
+        true,
+        "black",
+        2
       )
     );
 
+    coords.transform.y = 200;
+    coords.addComponent(
+      new TextRenderer(
+        "—",
+        "bold 22px Arial",
+        "white",
+        true,
+        "black",
+        2
+      )
+    );
 
-    const text =
-      info.getComponent(TextRenderer);
-
+    const title = info.getComponent(TextRenderer);
+    const state = stateText.getComponent(TextRenderer);
+    const coordLabel = coords.getComponent(TextRenderer);
 
 
     // ==========================================================
@@ -150,133 +183,130 @@ export class TouchInspector {
 
     let hover = false;
     let scale = 1;
-
+    let taps = 0;
 
 
     // ==========================================================
     // Update
     // ==========================================================
 
-    scene.OnFrame((delta:number)=>{
+    scene.OnFrame((delta: number) => {
 
-
-      if(
+      if (
         !camera ||
         !targetRenderer ||
         !pointerRenderer ||
-        !text
+        !ringRenderer ||
+        !title ||
+        !state ||
+        !coordLabel
       ) return;
 
 
+      // --------------------------
+      // Screen -> world
+      // --------------------------
 
-      // Text rainbow animation
-
-      text.color =
-        colors.rbw(5);
-
-
-
-      // Screen position -> World position
-
-      const world =
-        camera.screenToWorld(
-          Touch.x,
-          Touch.y,
-          this.engine.viewWidth,
-          this.engine.viewHeight
-        );
+      const world = camera.screenToWorld(
+        Touch.x,
+        Touch.y,
+        this.engine.viewWidth,
+        this.engine.viewHeight
+      );
 
 
-
-      // Move touch indicator
+      // --------------------------
+      // Pointer follows finger
+      // --------------------------
 
       pointer.transform.x = world.x;
       pointer.transform.y = world.y;
+      pointerRing.transform.x = world.x;
+      pointerRing.transform.y = world.y;
 
+      const showPointer = Touch.pressed;
+      pointer.active = showPointer;
+      pointerRing.active = showPointer;
 
-
-      // Collision check
-
-      hover =
-        Collision.pointInObject(
-          world.x,
-          world.y,
-          target,
-          size,
-          size
-        );
-
-
-
-      if(hover){
-
-
-        targetRenderer.color =
-          "#ffb347";
-
-
-        scale = 1.15;
-
-
-        text.text =
-          `Hover ✓\nWorld X:${world.x.toFixed(0)} Y:${world.y.toFixed(0)}`;
-
-
-      }else{
-
-
-        targetRenderer.color =
-          "darkorange";
-
-
-        scale = 1;
-
-
-        text.text =
-          `Outside\nWorld X:${world.x.toFixed(0)} Y:${world.y.toFixed(0)}`;
-
+      if (showPointer) {
+        const pulse = 1 + Math.sin(performance.now() * 0.012) * 0.15;
+        pointerRing.transform.scaleX = pulse;
+        pointerRing.transform.scaleY = pulse;
       }
 
 
+      // --------------------------
+      // Hover test
+      // --------------------------
 
-      // Smooth scale animation
+      hover = Collision.pointInObject(
+        world.x,
+        world.y,
+        target,
+        targetSize,
+        targetSize
+      );
 
-      target.transform.scaleX +=
-        (scale - target.transform.scaleX) *
-        8 *
-        delta;
+      if (hover && Touch.justPressed) {
+        taps++;
+        scale = 1.22;
+      }
+
+      if (hover) {
+        targetRenderer.color = Touch.pressed ? "#fbbf24" : "#fb923c";
+        scale = Math.max(scale, 1.12);
+      } else {
+        targetRenderer.color = "#ea580c";
+        if (scale < 1.05) scale = 1;
+      }
+
+      target.transform.scaleX += (scale - target.transform.scaleX) * 10 * delta;
+      target.transform.scaleY += (scale - target.transform.scaleY) * 10 * delta;
+      scale += (1 - scale) * 4 * delta;
 
 
-      target.transform.scaleY +=
-        (scale - target.transform.scaleY) *
-        8 *
-        delta;
+      // --------------------------
+      // HUD (white)
+      // --------------------------
 
+      title.color = "white";
+      state.color = "white";
+      coordLabel.color = "white";
 
+      title.text = "Touch Inspector";
 
+      if (!Touch.pressed) {
+        state.text = "Finger up · move over the box";
+      } else if (hover) {
+        state.text = Touch.justPressed
+          ? `Pressed inside · taps ${taps}`
+          : `Hovering inside · taps ${taps}`;
+      } else {
+        state.text = "Finger down · outside target";
+      }
+
+      coordLabel.text =
+`Screen: ${Touch.x.toFixed(0)}, ${Touch.y.toFixed(0)}
+World:  ${world.x.toFixed(1)}, ${world.y.toFixed(1)}
+pressed: ${Touch.pressed}
+hover: ${hover}  taps: ${taps}`;
     });
 
 
-
     // ==========================================================
-    // Build Scene
+    // Build scene
     // ==========================================================
 
     scene.add(cameraObject);
-
+    scene.add(panel);
     scene.add(target);
-
+    scene.add(pointerRing);
     scene.add(pointer);
-
     scene.add(info);
-
-
+    scene.add(stateText);
+    scene.add(coords);
 
     this.engine.addScene(scene);
-
     this.engine.loadScene(scene);
-
-
   }
-
 }

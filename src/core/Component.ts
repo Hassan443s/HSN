@@ -5,10 +5,8 @@ export abstract class Component {
   protected name: string = "Component";
   gameObject!: GameObject;
 
-  /** false → يتخطى update و draw */
   enabled: boolean = true;
 
-  /** هل تم استدعاء start */
   hasStarted: boolean = false;
 
   start(): void {}

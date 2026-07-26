@@ -96,7 +96,7 @@ export class Engine {
     this.running = true;
     this.rafId = requestAnimationFrame(this.loop);
     Touch.init(this.canvas);
-    EntryPoint.main(this);
+    EntryPoint.startUp(this);
   }
 
   private gameloop(time: number): void {

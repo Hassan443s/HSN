@@ -4,10 +4,11 @@ import type { GameObject } from "../core/GameObject";
 export class Camera extends Component {
   public zoom: number;
   public target: GameObject | null = null;
-  public smooth: boolean = false;
-  public smoothSpeed: number = 5;
+  public smooth: boolean = true;
+  public smoothSpeed: number = 8;
+  public offsetX: number = 0;
+  public offsetY: number = 0;
 
-  // --- Shake ---
   private shakeDuration: number = 0;
   private shakeTimer: number = 0;
   private shakeIntensity: number = 0;
@@ -48,20 +49,28 @@ export class Camera extends Component {
   start() {}
 
   update(delta: number) {
-    if (this.target) {
-      const camera = this.gameObject.transform;
-      const target = this.target.transform;
+    this.updateShake(delta);
+  }
 
-      if (this.smooth) {
-        camera.x += (target.x - camera.x) * this.smoothSpeed * delta;
-        camera.y += (target.y - camera.y) * this.smoothSpeed * delta;
-      } else {
-        camera.x = target.x;
-        camera.y = target.y;
-      }
+  lateFollow(delta: number) {
+    if (!this.target || this.target.isDestroyed || this.target.pendingDestroy) {
+      return;
     }
 
-    this.updateShake(delta);
+    const camera = this.gameObject.transform;
+    const target = this.target.transform;
+
+    const goalX = target.x + this.offsetX;
+    const goalY = target.y + this.offsetY;
+
+    if (this.smooth) {
+      const t = 1 - Math.exp(-this.smoothSpeed * delta);
+      camera.x += (goalX - camera.x) * t;
+      camera.y += (goalY - camera.y) * t;
+    } else {
+      camera.x = goalX;
+      camera.y = goalY;
+    }
   }
 
   private updateShake(delta: number) {
@@ -89,14 +98,12 @@ export class Camera extends Component {
   ): { x: number; y: number } {
     const t = this.gameObject.transform;
 
-    // عكس: مركز الشاشة → إزالة الزوم → عكس دوران الكاميرا → إضافة موضع الكاميرا
     const dx = (screenX - viewWidth / 2) / this.zoom;
     const dy = (screenY - viewHeight / 2) / this.zoom;
 
     const cos = Math.cos(t.rot);
     const sin = Math.sin(t.rot);
 
-    // R(+rot) * (dx, dy)
     return {
       x: t.x + (dx * cos - dy * sin) - this.shakeOffsetX,
       y: t.y + (dx * sin + dy * cos) - this.shakeOffsetY,

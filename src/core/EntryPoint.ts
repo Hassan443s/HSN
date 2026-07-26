@@ -1,27 +1,31 @@
-import {Engine} from "./Engine";
+import type{Engine} from "./Engine";
 import * as examples from "../examples";
 
-export class EntryPoint{
- static main(engine: Engine){
-  //(Ex1) - Camera Test
-   //const app = new examples.CameraMove(engine);
+type Demo = new (engine: Engine) => any;
 
-  //(Ex2) - Transforms Test
-   const app = new examples.Transforms(engine);
+export class EntryPoint {
 
-  //(Ex3) - MuiltyScene
-   //const app = new examples.MultiScene(engine);
+ static startUp(engine: Engine){
 
-  //(Ex4) - MuiltyCamera
-   //const app = new examples.MultiCamera(engine);
+  const Demos: Record<string, Demo> = {
+   "1": examples.CameraFollowDemo,
+   "2": examples.CircleDemo,
+   "3": examples.ClickGame,
+   "4": examples.JoystickDemo,
+   "5": examples.MultiCamera,
+   "6": examples.MultiScene,
+   "7": examples.TouchInspector,
+   "8": examples.Transforms
+  };
 
-  //(Ex5) - ClickGame
-   //const app = new examples.ClickGame(engine);
+  const selectDemo = Demos["3"];
 
- //(Ex6) - ColisionPoint
-  //const app = new examples.TouchInspector(engine);
+  if(!selectDemo){
+    throw new Error("Demo not found");
+  }
 
-  //RUN APP
-   app.run();
+  const App = new selectDemo(engine);
+
+  App.run();
  }
 }

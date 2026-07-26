@@ -12,382 +12,247 @@ import { Colors } from "../tools/Colors";
 // ==========================================================
 // Transform System Demo
 //
-// Demonstrates the Transform component.
+// Demonstrates the Transform component in world space.
 //
 // Features:
 //
-// • Position movement.
-// • Object rotation.
-// • Object scaling.
-// • Animated transforms using delta time.
-// • Camera based world rendering.
+// • Position movement (translate).
+// • Continuous rotation.
+// • Pulse scaling.
+// • Smooth animation with delta time.
+// • Live debug values on screen.
+// • Camera-based world rendering.
 //
 // Transform properties:
 //
-// transform.x        -> Move object horizontally.
-// transform.y        -> Move object vertically.
-// transform.rot      -> Rotate object (radians).
-// transform.scaleX   -> Horizontal scale.
-// transform.scaleY   -> Vertical scale.
+// transform.x        -> world X position
+// transform.y        -> world Y position
+// transform.rot      -> rotation in radians
+// transform.scaleX   -> horizontal scale
+// transform.scaleY   -> vertical scale
+//
+// How this demo is organized:
+//
+// 1. scaleBox  -> only scaleX / scaleY change
+// 2. moveBox   -> only x changes
+// 3. rotateBox -> only rot changes
+// 4. title     -> shows the current values
 //
 // Notes:
 //
-// All objects use World Space.
-// The Camera controls what is displayed on screen.
+// • All objects live in World Space.
+// • The Camera decides what appears on screen.
+// • Prefer delta-based motion for stable speed on all devices.
+// • Cache getComponent() results outside the frame loop.
+// • Draw order follows scene.add order (later = above).
 //
-// For more information:
-// Go to Transform.ts and Camera.ts
+// Related files:
+// Transform.ts · Camera.ts · BoxRenderer.ts
 // ==========================================================
 
 
 export class Transforms {
 
+  engine: Engine;
 
- engine:Engine;
+  constructor(engine: Engine) {
+    this.engine = engine;
+  }
 
+  async run(): Promise<void> {
 
- constructor(engine:Engine){
 
-  this.engine = engine;
+    // ==========================================================
+    // Scene
+    // ==========================================================
 
- }
+    const scene = new Scene();
 
 
+    // ==========================================================
+    // Objects
+    //
+    // camera    -> controls the view
+    // scaleBox  -> scaling demo
+    // moveBox   -> position demo
+    // rotateBox -> rotation demo
+    // title     -> live values
+    // ==========================================================
 
- async run():Promise<void>{
+    const camera = new GameObject("camera");
+    const scaleBox = new GameObject("scaleBox");
+    const moveBox = new GameObject("moveBox");
+    const rotateBox = new GameObject("rotateBox");
+    const title = new GameObject("title");
 
 
+    // ==========================================================
+    // Camera
+    //
+    // Zoom 0.65 keeps all three demos visible on phones.
+    // Objects use world coordinates only.
+    // ==========================================================
 
-  // ==========================================================
-  // Create Scene
-  // ==========================================================
+    camera.addComponent(new Camera(0.65));
 
-  const scene = new Scene();
 
+    // ==========================================================
+    // Scale demo
+    //
+    // scaleX / scaleY pulse over time.
+    // ==========================================================
 
+    scaleBox.transform.y = -140;
 
-  // ==========================================================
-  // Create Objects
-  //
-  // camera  -> Controls the view.
-  // scaleBox -> Demonstrates scaling.
-  // moveBox  -> Demonstrates position movement.
-  // rotateBox -> Demonstrates rotation.
-  // title -> Displays information.
-  // ==========================================================
+    scaleBox.addComponent(
+      new BoxRenderer(100, 100, "orange", true, "white", 3)
+    );
 
 
-  const camera = new GameObject();
+    // ==========================================================
+    // Position demo
+    //
+    // x moves left and right with Math.sin.
+    // ==========================================================
 
-  const scaleBox = new GameObject();
+    moveBox.transform.y = 40;
 
-  const moveBox = new GameObject();
+    moveBox.addComponent(
+      new BoxRenderer(100, 100, "red", true, "white", 3)
+    );
 
-  const rotateBox = new GameObject();
 
-  const title = new GameObject();
+    // ==========================================================
+    // Rotation demo
+    //
+    // rot increases every frame using delta.
+    // ==========================================================
 
+    rotateBox.transform.y = 220;
 
+    rotateBox.addComponent(
+      new BoxRenderer(100, 100, "hotpink", true, "white", 3)
+    );
 
 
-  // ==========================================================
-  // Camera Setup
-  //
-  // Zoom 0.65 makes the demo fit better on screen.
-  //
-  // Camera works in World Space.
-  // Objects do not need screen coordinates.
-  // ==========================================================
+    // ==========================================================
+    // Info text
+    // ==========================================================
 
+    title.transform.y = -280;
 
-  camera.addComponent(
-   new Camera(0.3)
-  );
+    title.addComponent(
+      new TextRenderer(
+        "Transform System",
+        "bold 40px Arial",
+        "white",
+        true,
+        "black",
+        3
+      )
+    );
 
 
+    // ==========================================================
+    // Cache components
+    //
+    // Avoid getComponent() every frame.
+    // ==========================================================
 
+    const scaleRenderer = scaleBox.getComponent(BoxRenderer);
+    const moveRenderer = moveBox.getComponent(BoxRenderer);
+    const rotateRenderer = rotateBox.getComponent(BoxRenderer);
+    const text = title.getComponent(TextRenderer);
 
-  // ==========================================================
-  // Scale Demo
-  //
-  // Object changes its size over time.
-  // Uses:
-  //
-  // transform.scaleX
-  // transform.scaleY
-  // ==========================================================
 
+    // ==========================================================
+    // Helpers
+    // ==========================================================
 
-  scaleBox.transform.y = -130;
+    const color1 = new Colors();
+    const color2 = new Colors();
+    const color3 = new Colors();
 
+    let time = 0;
 
-  scaleBox.addComponent(
-   new BoxRenderer(
-    100,
-    100,
-    "orange",
-    true,
-    "white",
-    3
-   )
-  );
 
+    // ==========================================================
+    // Update loop
+    //
+    // delta = seconds since last frame.
+    // Multiply speeds by delta for stable motion.
+    // ==========================================================
 
+    scene.OnFrame((delta: number) => {
 
+      if (!scaleRenderer || !moveRenderer || !rotateRenderer || !text) {
+        return;
+      }
 
-  // ==========================================================
-  // Position Demo
-  //
-  // Object moves left and right.
-  //
-  // Uses:
-  //
-  // transform.x
-  // ==========================================================
+      time += delta;
 
 
-  moveBox.transform.y = 50;
+      // --------------------------
+      // Scale
+      // --------------------------
 
+      const scale = 1 + Math.sin(time * 4) * 0.3;
+      scaleBox.transform.scaleX = scale;
+      scaleBox.transform.scaleY = scale;
 
-  moveBox.addComponent(
-   new BoxRenderer(
-    100,
-    100,
-    "red",
-    true,
-    "white",
-    3
-   )
-  );
 
+      // --------------------------
+      // Position
+      // --------------------------
 
+      moveBox.transform.x = Math.sin(time * 2) * 180;
 
 
-  // ==========================================================
-  // Rotation Demo
-  //
-  // Object rotates continuously.
-  //
-  // Uses:
-  //
-  // transform.rot
-  // ==========================================================
+      // --------------------------
+      // Rotation
+      // rot += angularSpeed * delta
+      // Math.PI rad/s = 180 deg/s
+      // --------------------------
 
+      rotateBox.transform.rot += Math.PI * delta;
 
-  rotateBox.transform.y = 220;
 
+      // --------------------------
+      // Colors
+      // --------------------------
 
-  rotateBox.addComponent(
-   new BoxRenderer(
-    100,
-    100,
-    "hotpink",
-    true,
-    "black",
-    3
-   )
-  );
+      scaleRenderer.color = color1.rbw(5);
+      moveRenderer.color = color2.rbw(7);
+      rotateRenderer.color = color3.rbw(10);
 
 
+      // --------------------------
+      // Debug text (white)
+      // --------------------------
 
+      text.color = "white";
+      text.text =
+`Transform System
 
-  // ==========================================================
-  // Information Text
-  //
-  // Displays current transform values.
-  // ==========================================================
-
-
-  title.transform.y = -330;
-
-
-  title.addComponent(
-   new TextRenderer(
-    "[Transform System]",
-    "bold 45px Arial",
-    "white",
-    true,
-    "black"
-   )
-  );
-
-
-
-
-  // ==========================================================
-  // Cache Components
-  //
-  // Getting components once improves performance.
-  // Avoid searching every frame.
-  // ==========================================================
-
-
-  const scaleRenderer =
-   scaleBox.getComponent(BoxRenderer);
-
-
-  const moveRenderer =
-   moveBox.getComponent(BoxRenderer);
-
-
-  const rotateRenderer =
-   rotateBox.getComponent(BoxRenderer);
-
-
-  const text =
-   title.getComponent(TextRenderer);
-
-
-
-
-  // ==========================================================
-  // Helpers
-  // ==========================================================
-
-
-  const color1 = new Colors();
-  const color2 = new Colors();
-  const color3 = new Colors();
-
-
-  let time = 0;
-
-
-
-
-  // ==========================================================
-  // Update Loop
-  //
-  // Runs every frame.
-  //
-  // delta:
-  // Time passed since previous frame.
-  // Used for smooth animation.
-  // ==========================================================
-
-
-  scene.OnFrame((delta:number)=>{
-
-
-   if(
-    !scaleRenderer ||
-    !moveRenderer ||
-    !rotateRenderer ||
-    !text
-   ) return;
-
-
-
-   time += delta;
-
-
-
-
-   // --------------------------
-   // Scale Animation
-   // --------------------------
-
-
-   const scale =
-    1 + Math.sin(time * 4) * 0.3;
-
-
-   scaleBox.transform.scaleX = scale;
-   scaleBox.transform.scaleY = scale;
-
-
-
-
-   // --------------------------
-   // Position Animation
-   // --------------------------
-
-
-   moveBox.transform.x =
-    Math.sin(time * 2) * 180;
-
-
-
-
-   // --------------------------
-   // Rotation Animation
-   // --------------------------
-
-
-   rotateBox.transform.rot +=
-    Math.PI * delta;
-
-
-
-
-   // --------------------------
-   // Color Animation
-   // --------------------------
-
-
-   scaleRenderer.color =
-    color1.rbw(5);
-
-
-   moveRenderer.color =
-    color2.rbw(7);
-
-
-   rotateRenderer.color =
-    color3.rbw(10);
-
-
-
-
-   // --------------------------
-   // Debug Information
-   // --------------------------
-
-
-   text.text =
-`[Transform System]
 Scale: ${scale.toFixed(2)}
-Position X: ${moveBox.transform.x.toFixed(1)} Y: ${moveBox.transform.y.toFixed(1)}
+Position X: ${moveBox.transform.x.toFixed(1)}
 Rotation: ${rotateBox.transform.rot.toFixed(2)}`;
-  });
+    });
 
 
+    // ==========================================================
+    // Build scene
+    //
+    // Later add() calls draw above earlier ones.
+    // ==========================================================
 
+    scene.add(camera);
+    scene.add(scaleBox);
+    scene.add(moveBox);
+    scene.add(rotateBox);
+    scene.add(title);
 
-  // ==========================================================
-  // Build Scene
-  //
-  // Add objects to the scene.
-  //
-  // Order matters:
-  // Objects added later render above previous objects.
-  // ==========================================================
-
-
-  scene.add(camera);
-
-  scene.add(scaleBox);
-
-  scene.add(moveBox);
-
-  scene.add(rotateBox);
-
-  scene.add(title);
-
-
-
-
-  // ==========================================================
-  // Start Scene
-  // ==========================================================
-
-
-  this.engine.addScene(scene);
-
-  this.engine.loadScene(scene);
-
-
- }
-
-
+    this.engine.addScene(scene);
+    this.engine.loadScene(scene);
+  }
 }

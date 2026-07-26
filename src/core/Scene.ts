@@ -42,9 +42,6 @@ export class Scene {
     this.activeCamera = camera;
   }
 
-  /**
-   * طلب إزالة آمنة (تدمير في نهاية الفريم).
-   */
   remove(obj: GameObject): void {
     if (!obj || obj.isDestroyed) return;
     obj.destroy();
@@ -70,7 +67,6 @@ export class Scene {
     this.frameCallbacks.push(callback);
   }
 
-  /** إزالة callback معيّن إن احتجت */
   OffFrame(callback: (delta: number) => void): void {
     const i = this.frameCallbacks.indexOf(callback);
     if (i !== -1) this.frameCallbacks.splice(i, 1);
@@ -93,18 +89,23 @@ export class Scene {
   enter(): void {}
 
   update(delta: number): void {
-    const list = this.objects.slice();
+  const list = this.objects.slice();
 
-    for (const obj of list) {
-      if (!obj.isDestroyed && !obj.pendingDestroy) {
-        obj.update(delta);
-      }
+  for (const obj of list) {
+    if (!obj.isDestroyed && !obj.pendingDestroy) {
+      obj.update(delta);
     }
-
-    for (const cb of this.frameCallbacks) cb(delta);
-
-    this.processDestroyed();
   }
+
+  for (const cb of this.frameCallbacks) cb(delta);
+
+  if (this.activeCamera) {
+    this.activeCamera.lateFollow(delta);
+  }
+
+  this.processDestroyed();
+  }
+
 
   draw(ctx: CanvasRenderingContext2D, width: number, height: number): void {
     const cam = this.activeCamera;
@@ -126,7 +127,6 @@ export class Scene {
     }
   }
 
-  /** تنظيف كل من طُلب تدميره هذا الفريم */
   private processDestroyed(): void {
     let i = 0;
 
